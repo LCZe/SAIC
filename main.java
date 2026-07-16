@@ -1,59 +1,33 @@
 import java.util.Scanner;
 
-class SavingsAccount {
-    private String accountName;
-    private double originalBalance;
-    private double annualInterestRate;
-
-    public SavingsAccount(
-            String accountName,
-            double originalBalance,
-            double annualInterestRate) {
-
-        this.accountName = accountName;
-        this.originalBalance = originalBalance;
-        this.annualInterestRate = annualInterestRate;
-    }
-
-    public double calculateInterest() {
-        return originalBalance * annualInterestRate / 100;
-    }
-
-    public double calculateNewBalance() {
-        return originalBalance + calculateInterest();
-    }
-
-    public void displayAccountInfo() {
-        System.out.println("----------------------------------------");
-        System.out.println("Account Name     : " + accountName);
-        System.out.printf("Annual Rate      : %.2f%%%n", annualInterestRate);
-        System.out.printf("Original Balance : %.2f%n", originalBalance);
-        System.out.printf("Interest Earned  : %.2f%n", calculateInterest());
-        System.out.printf("New Balance      : %.2f%n", calculateNewBalance());
-    }
-}
-
 public class SavingsAccountDemo {
+
+    private static final int ACCOUNT_COUNT = 5;
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
-        SavingsAccount[] accounts = new SavingsAccount[5];
+        SavingsAccount[] accounts = new SavingsAccount[ACCOUNT_COUNT];
 
         for (int i = 0; i < accounts.length; i++) {
             System.out.println("\n请输入第 " + (i + 1) + " 个储蓄账户资料");
 
-            System.out.print("账户名称：");
-            String accountName = scanner.nextLine();
+            String accountName = readAccountName(scanner);
 
-            double originalBalance = readPositiveDouble(
+            double originalBalance = readDouble(
                     scanner,
-                    "原始余额："
+                    "原始余额：",
+                    0,
+                    SavingsAccount.MAX_BALANCE,
+                    "原始余额"
             );
 
-            double annualInterestRate = readPositiveDouble(
+            double annualInterestRate = readDouble(
                     scanner,
-                    "年利率（例如 3.5 表示 3.5%）："
+                    "年利率（输入n,代表年利率n%）：",
+                    0,
+                    SavingsAccount.MAX_INTEREST_RATE,
+                    "年利率"
             );
 
             accounts[i] = new SavingsAccount(
@@ -72,22 +46,50 @@ public class SavingsAccountDemo {
         scanner.close();
     }
 
-    private static double readPositiveDouble(
+    /**
+     * 读取非空账户名称
+     */
+    private static String readAccountName(Scanner scanner) {
+        while (true) {
+            System.out.print("账户名称：");
+            String input = scanner.nextLine();
+
+            if (input != null && !input.trim().isEmpty()) {
+                return input.trim();
+            }
+
+            System.out.println("账户名称不能为空，请重新输入。");
+        }
+    }
+
+    /**
+     * 读取一个在 [min, max] 范围内的 double 值
+     */
+    private static double readDouble(
             Scanner scanner,
-            String message) {
+            String prompt,
+            double min,
+            double max,
+            String fieldName) {
 
         while (true) {
-            System.out.print(message);
+            System.out.print(prompt);
             String input = scanner.nextLine();
 
             try {
                 double value = Double.parseDouble(input);
 
-                if (value >= 0) {
-                    return value;
+                if (value < min) {
+                    System.out.printf("%s 不能小于 %.2f，请重新输入。%n", fieldName, min);
+                    continue;
                 }
 
-                System.out.println("请输入大于或等于 0 的数字。");
+                if (value > max) {
+                    System.out.printf("%s 不能大于 %.2f，请重新输入。%n", fieldName, max);
+                    continue;
+                }
+
+                return value;
             } catch (NumberFormatException e) {
                 System.out.println("输入格式错误，请输入数字。");
             }
