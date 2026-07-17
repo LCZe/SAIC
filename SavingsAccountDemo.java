@@ -1,8 +1,10 @@
+import java.math.BigDecimal;
+import java.util.Locale;
 import java.util.Scanner;
 
 public class SavingsAccountDemo {
 
-    private static final int ACCOUNT_COUNT = 5;
+    private static final int ACCOUNT_COUNT = 1;
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
@@ -14,27 +16,17 @@ public class SavingsAccountDemo {
 
             String accountName = readAccountName(scanner);
 
-            double originalBalance = readDouble(
+            CustomerType customerType = readCustomerType(scanner);
+
+            BigDecimal originalBalance = readBigDecimal(
                     scanner,
                     "原始余额：",
-                    0,
+                    BigDecimal.ZERO,
                     SavingsAccount.MAX_BALANCE,
                     "原始余额"
             );
 
-            double annualInterestRate = readDouble(
-                    scanner,
-                    "年利率（输入n,代表年利率n%）：",
-                    0,
-                    SavingsAccount.MAX_INTEREST_RATE,
-                    "年利率"
-            );
-
-            accounts[i] = new SavingsAccount(
-                    accountName,
-                    originalBalance,
-                    annualInterestRate
-            );
+            accounts[i] = createAccount(customerType, accountName, originalBalance);
         }
 
         System.out.println("\n========== 储蓄账户计算结果 ==========");
@@ -44,6 +36,23 @@ public class SavingsAccountDemo {
         }
 
         scanner.close();
+    }
+
+    private static SavingsAccount createAccount(
+            CustomerType customerType,
+            String accountName,
+            BigDecimal originalBalance) {
+
+        switch (customerType) {
+            case STANDARD:
+                return new StandardSavingsAccount(accountName, originalBalance);
+            case PREMIUM:
+                return new PremiumSavingsAccount(accountName, originalBalance);
+            case CORPORATE:
+                return new CorporateSavingsAccount(accountName, originalBalance);
+            default:
+                throw new IllegalArgumentException("不支持的客户类型：" + customerType);
+        }
     }
 
     /**
@@ -63,13 +72,34 @@ public class SavingsAccountDemo {
     }
 
     /**
-     * 读取一个在 [min, max] 范围内的 double 值
+     * 读取客户类型
      */
-    private static double readDouble(
+    private static CustomerType readCustomerType(Scanner scanner) {
+        while (true) {
+            System.out.println("客户类型（STANDARD / PREMIUM / CORPORATE）：");
+            String input = scanner.nextLine();
+
+            if (input == null || input.trim().isEmpty()) {
+                System.out.println("客户类型不能为空，请重新输入。");
+                continue;
+            }
+
+            try {
+                return CustomerType.valueOf(input.trim().toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException e) {
+                System.out.println("客户类型输入无效，请输入 STANDARD、PREMIUM 或 CORPORATE。");
+            }
+        }
+    }
+
+    /**
+     * 读取一个在 [min, max] 范围内的 BigDecimal 值
+     */
+    private static BigDecimal readBigDecimal(
             Scanner scanner,
             String prompt,
-            double min,
-            double max,
+            BigDecimal min,
+            BigDecimal max,
             String fieldName) {
 
         while (true) {
@@ -77,22 +107,23 @@ public class SavingsAccountDemo {
             String input = scanner.nextLine();
 
             try {
-                double value = Double.parseDouble(input);
+                BigDecimal value = new BigDecimal(input.trim());
 
-                if (value < min) {
-                    System.out.printf("%s 不能小于 %.2f，请重新输入。%n", fieldName, min);
+                if (value.compareTo(min) < 0) {
+                    System.out.printf("%s 不能小于 %s，请重新输入。%n", fieldName, min.toPlainString());
                     continue;
                 }
 
-                if (value > max) {
-                    System.out.printf("%s 不能大于 %.2f，请重新输入。%n", fieldName, max);
+                if (value.compareTo(max) > 0) {
+                    System.out.printf("%s 不能大于 %s，请重新输入。%n", fieldName, max.toPlainString());
                     continue;
                 }
 
                 return value;
             } catch (NumberFormatException e) {
-                System.out.println("输入格式错误，请输入数字。");
+                System.out.println("输入格式错误，请输入有效金额。");
             }
         }
     }
 }
+
